@@ -3,11 +3,12 @@ package connection;
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.SerialPort;
-
-import java.io.FileDescriptor;
+import java.io.BufferedReader;
+//import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.InputStreamReader;
 import java.util.Scanner;
 public class TwoWaySerialComm {
 	 public TwoWaySerialComm()
@@ -18,6 +19,7 @@ public class TwoWaySerialComm {
 	    void connect ( String portName ) throws Exception
 	    {
 	        CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(portName);
+	        byte []data;
 	        if ( portIdentifier.isCurrentlyOwned() )
 	        {
 	            System.out.println("Error: Port is currently in use");
@@ -33,7 +35,14 @@ public class TwoWaySerialComm {
 	                
 	                InputStream in = serialPort.getInputStream();
 	                OutputStream out = serialPort.getOutputStream();
-	                this.readVersion(in,out);
+	                //(new Thread(new Function(in,out))).start();
+	                this.Function(in, out);
+	                // Command com=new Command(in,out);
+	                
+	                //data=com.readVersion();
+	               // System.out.println("The reader version is: "+Integer.toHexString((data[8]) & 0xFF)+"."+Integer.toHexString((data[7]) & 0xFF));
+	                
+	                //this.readVersion(in,out);
 	                
 	                //byte []line_size=buffer[];
 	                //if (line_size.length<2){
@@ -51,53 +60,99 @@ public class TwoWaySerialComm {
 	        
 	    }
 	    
-	    public void readVersion(InputStream in,OutputStream out){
-	    	byte[]command=new byte[]{(byte)0x01, (byte)0x09, (byte)0, (byte)0,(byte) 0,(byte) 0, (byte)0xf0, (byte)0xf8,(byte)0x07};
-            //System.out.println(bytesToHexString(command,command.length));
+	   public static void Function (InputStream in,OutputStream out ){
+	    	BufferedReader commandInput = new BufferedReader(new InputStreamReader(System.in));     
+            String c=null;
+            Command com=new Command(in,out);
+            System.out.println("Input the command: ");
             
-            byte[] buffer=new byte[20];
-            
-            int len=-1;
-            try
-            {	
-            	 out.write(command);
-                 len = in.read(buffer,0,1) ;
-                 String SOF=(bytesToHexString(buffer,len));
-                 len = in.read(buffer,1,1) ;
-                 int length_data = buffer[1] & 0xFF; 
-                 String data=bytesToHexString(buffer,len);
-                 len = in.read(buffer,2,length_data-2) ; 
-                 
-                 System.out.println("The reader version is: "+Integer.toHexString((buffer[8]) & 0xFF)+"."+Integer.toHexString((buffer[7]) & 0xFF));
-                 //System.out.println(bytesToHexString(buffer,length_data));
-                 //System.out.println(length_data);
+            while(true){
+	        	try {
+	                c = commandInput.readLine();
                 
-                 //System.out.println(len);
-                	
-                
-                
-            }
-            catch ( IOException e )
+	            } catch (IOException e) {
+	                e.printStackTrace();
+	            }
+	        
+			byte[] data;
+			
+            if ( c !=null )
             {
-                e.printStackTrace();
-            }            
-            
+                if (c.equals("readVersion")){
+                	data=com.readVersion();
+ 	                System.out.println("The reader version is: "+Integer.toHexString((data[8]) & 0xFF)+"."+Integer.toHexString((data[7]) & 0xFF));
+ 	                
+                	
+                }
+                else if(c.equals("TagDetail")){
+                	data=com.TagDetail();
+                	if ((data[5] & 0x10) != 0){
+
+                	    /*error_meaning = {
+                	        "0x1" : "Transponder not found.",
+                	        "0x2" : "Command not supported.",
+                	        "0x3" : "Packet checksum invalid.",
+                	        "0x4" : "Packet flags invalid for command.",
+                	        "0x5" : "General write failure.",
+                	        "0x6" : "Write failure due to locked block.",
+                	        "0x7" : "Transponder does not support function.",
+                	        "0xf" : "Undefined error."
+                	        }.get(hex(response[7]), "Unknown error code.")
+        				*/
+                	    System.out.println("Reader returned error code: " + (data[7]));
+                   }
+                }
+                else{
+                	System.out.println("Wrong command. Try again!");
+                }
+               
+            }
+            }
+               
 	    }
-	    
-	    public static String bytesToHexString(byte[] src,int length){  
-	        StringBuilder stringBuilder = new StringBuilder("");  
-	        if (src == null || length <= 0) {  
-	            return null;  
-	        }  
-	        for (int i = 0; i < length; i++) {  
-	            int v = src[i] & 0xFF;  
-	            String hv = Integer.toHexString(v);  
-	            if (hv.length() < 2) {  
-	                stringBuilder.append(0);  
-	            }  
-	            stringBuilder.append(hv);  
-	        }  
-	        return stringBuilder.toString();  
+	    /*public static class Function implements Runnable 
+	    {
+	    	InputStream in;
+	    	OutputStream out;
+	    	public Function ( InputStream in,OutputStream out )
+	        {
+	            this.in = in;
+	            this.out = out;
+	        }
+	    	public void run ()
+	        {
+	    		       BufferedReader commandInput = new BufferedReader(new InputStreamReader(System.in));     
+            String c=null;
+            Command com=new Command(in,out);
+            System.out.println("Input the command: ");
+            while(true){
+	        	try {
+	                c = commandInput.readLine();
+                
+	            } catch (IOException e) {
+	                e.printStackTrace();
+	            }
+	        
+			byte[] data;
+			
+            if ( c !=null )
+            {
+                if (c.equals("readVersion")){
+                	data=com.readVersion();
+ 	                System.out.println("The reader version is: "+Integer.toHexString((data[8]) & 0xFF)+"."+Integer.toHexString((data[7]) & 0xFF));
+ 	                
+                	
+                }
+                else{
+                	System.out.println("Wrong command. Try again!");
+                }
+               
+            }
+            }
+		    	        
+		                //commandInput.close();                    
+		            		              
+	        }
 	    }
 	    /** */
 	  /*  public static class SerialReader implements Runnable 
@@ -141,16 +196,28 @@ public class TwoWaySerialComm {
 	        {
 	            try
 	            {                
-	                int c = 0;
-	                while ( ( c = System.in.wirte()) > -1 )
+	                String c=null;
+	                System.out.println("Input the command: ");
+	    	        Scanner commandInput = new Scanner(System.in);
+	    			c = commandInput.nextLine();  
+	    			byte[]command;
+	    			//Command com=new Command(in,out);
+	                while ( c !=null )
 	                {
-	                    this.out.write(c);
-	                }                
+	                    if (c.equals("readVersion")){
+	                    	
+	                    	command=new byte[]{(byte)0x01, (byte)0x09, (byte)0, (byte)0,(byte) 0,(byte) 0, (byte)0xf0, (byte)0xf8,(byte)0x07};
+	                    	 this.out.write(command);
+	                    }
+	                   
+	                }
+	                commandInput.close();                    
 	            }
 	            catch ( IOException e )
 	            {
 	                e.printStackTrace();
-	            }            
+	            }     
+	               
 	        }
 	    }*/
 	    
@@ -159,7 +226,7 @@ public class TwoWaySerialComm {
 	    	System.out.println("Input the port: ");
 	    	Scanner terminalInput = new Scanner(System.in);
 	    	String s = terminalInput.nextLine();  
-	    	terminalInput.close();
+	    	
 	    try
 	        {   
 	            (new TwoWaySerialComm()).connect(s);
@@ -169,5 +236,6 @@ public class TwoWaySerialComm {
 	            // TODO Auto-generated catch block
 	            e.printStackTrace();
 	        }
+	   // terminalInput.close();
 	    }
 }
