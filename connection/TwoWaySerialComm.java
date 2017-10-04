@@ -63,6 +63,8 @@ public class TwoWaySerialComm {
 	   public static void Function (InputStream in,OutputStream out ){
 	    	BufferedReader commandInput = new BufferedReader(new InputStreamReader(System.in));     
             String c=null;
+            String itemName=null;
+            String itemDetail=null;
             Command com=new Command(in,out);
             System.out.println("Input the command: ");
             
@@ -86,22 +88,72 @@ public class TwoWaySerialComm {
                 }
                 else if(c.equals("TagDetail")){
                 	data=com.TagDetail();
-                	if ((data[5] & 0x10) != 0){
-
-                	    /*error_meaning = {
-                	        "0x1" : "Transponder not found.",
-                	        "0x2" : "Command not supported.",
-                	        "0x3" : "Packet checksum invalid.",
-                	        "0x4" : "Packet flags invalid for command.",
-                	        "0x5" : "General write failure.",
-                	        "0x6" : "Write failure due to locked block.",
-                	        "0x7" : "Transponder does not support function.",
-                	        "0xf" : "Undefined error."
-                	        }.get(hex(response[7]), "Unknown error code.")
-        				*/
-                	    System.out.println("Reader returned error code: " + (data[7]));
-                   }
+                	byte chkErr=chkErrorISO(data);
+                	if (chkErr!=0){
+                	   
+                	    System.out.println("Reader returned error code: " + chkErr);
+                	    System.exit(1);
+                    }
+                	else if(data.toString().equals("error")){
+                		 System.out.println("CheckSum Error");
+                		 System.exit(1);
+                	}
+                	else{
+                		//String.format("%8s", Integer.toBinaryString(b2 & 0xFF)).replace(' ', '0');
+                		if(data[7]==0x01){
+                			System.out.println("Transponder ID: 0x" 
+                					+ String.format("%2s",Integer.toHexString((data[20]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[19]) & 0xFF)).replace(' ','0')
+                					+ String.format("%2s",Integer.toHexString((data[18]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[17]) & 0xFF)).replace(' ','0')
+                					//+ Integer.toHexString((data[18]) & 0xFF) + Integer.toHexString((data[17]) & 0xFF)
+                					+ String.format("%2s",Integer.toHexString((data[16]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[15]) & 0xFF)).replace(' ','0')
+                					+ String.format("%2s",Integer.toHexString((data[14]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[13]) & 0xFF)).replace(' ','0'));
+     
+                			System.out.println("DSFID: 0x" +  String.format("%2s",Integer.toHexString((data[12]) & 0xFF)).replace(' ','0'));
+                		}else{
+                			System.out.println(("RFID tag not read."));
+                		}
+                		//System.out.println(Command.bytesToHexString(data, data.length));
+                	}
                 }
+                
+                else if(c.equals("write")){
+                	System.out.println("Please enter the item's name: ");
+                	try {
+                		itemName = commandInput.readLine();
+                    
+    	            } catch (IOException e) {
+    	                e.printStackTrace();
+    	            }               	
+                	System.out.println("Please enter the detail: ");
+                	try {
+                		itemDetail= commandInput.readLine();
+                    
+    	            } catch (IOException e) {
+    	                e.printStackTrace();
+    	            } 
+                	System.out.println("The name of the item is: "+itemName+" and the item detail is: "+itemDetail);
+                	data=com.Write(itemName, itemDetail);
+                }
+                
+                else if(c.equals("read")){
+                	System.out.println("Please enter the item's name: ");
+                	try {
+                		itemName = commandInput.readLine();
+                    
+    	            } catch (IOException e) {
+    	                e.printStackTrace();
+    	            }    
+                	System.out.println("The name of the item is: "+itemName);
+                	data=com.Read(itemName);
+                	byte chkErr=chkErrorISO(data);
+                	if (chkErr!=0){
+                	   
+                	    System.out.println("Reader returned error code: " + chkErr);
+                    }
+                	System.out.println(Command.bytesToHexString(data, data.length));
+                	
+                }
+                
                 else{
                 	System.out.println("Wrong command. Try again!");
                 }
@@ -110,6 +162,23 @@ public class TwoWaySerialComm {
             }
                
 	    }
+	   
+	   public static byte chkErrorISO(byte[] data){
+		   byte error_code;
+		    if ((data[1] == 0x0a) & (data[5] & 0x10) != 0 ){ 
+		       error_code = data[7];
+		        /*error_meaning = {
+		            "0x1" : "Transponder not found.",
+		            "0x2" : "Command not supported.",
+		            "0x4" : "Packet flags invalid for command.",
+		            }.get(hex(rddat[7]), "Unknown error code.")*/
+		    }
+		    else{
+		        error_code = 0  ;
+		        String error_meaning = "OK";
+		    }
+		    return error_code;
+	   }
 	    /*public static class Function implements Runnable 
 	    {
 	    	InputStream in;
@@ -154,73 +223,7 @@ public class TwoWaySerialComm {
 		            		              
 	        }
 	    }
-	    /** */
-	  /*  public static class SerialReader implements Runnable 
-	    {
-	        InputStream in;
-	        
-	        public SerialReader ( InputStream in )
-	        {
-	            this.in = in;
-	        }
-	        
-	        public void run ()
-	        {
-	            byte[] buffer = new byte[1024];
-	            int len = -1;
-	            try
-	            {
-	                while ( ( len = this.in.read(buffer)) > -1 )
-	                {
-	                    System.out.print(new String(buffer,0,len));
-	                }
-	            }
-	            catch ( IOException e )
-	            {
-	                e.printStackTrace();
-	            }            
-	        }
-	    }
-
-	    /** */
-	   /* public static class SerialWriter implements Runnable 
-	    {
-	        OutputStream out;
-	        
-	        public SerialWriter ( OutputStream out )
-	        {
-	            this.out = out;
-	        }
-	        
-	        public void run ()
-	        {
-	            try
-	            {                
-	                String c=null;
-	                System.out.println("Input the command: ");
-	    	        Scanner commandInput = new Scanner(System.in);
-	    			c = commandInput.nextLine();  
-	    			byte[]command;
-	    			//Command com=new Command(in,out);
-	                while ( c !=null )
-	                {
-	                    if (c.equals("readVersion")){
-	                    	
-	                    	command=new byte[]{(byte)0x01, (byte)0x09, (byte)0, (byte)0,(byte) 0,(byte) 0, (byte)0xf0, (byte)0xf8,(byte)0x07};
-	                    	 this.out.write(command);
-	                    }
-	                   
-	                }
-	                commandInput.close();                    
-	            }
-	            catch ( IOException e )
-	            {
-	                e.printStackTrace();
-	            }     
-	               
-	        }
-	    }*/
-	    
+	    */
 	    public static void main ( String[] args )
 	    {   
 	    	System.out.println("Input the port: ");
