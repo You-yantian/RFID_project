@@ -157,34 +157,12 @@ public class TwoWaySerialComm {
                     }
                 }
                
-                else if(c.equals("writeSingal")){
-                	String Block="0";
-                	System.out.println("Please enter the item's name: ");
-                	try {
-                		itemName = commandInput.readLine();
-                    
-    	            } catch (IOException e) {
-    	                e.printStackTrace();
-    	            }               	
-                	System.out.println("Please enter the detail: ");
-                	try {
-                		itemDetail= commandInput.readLine();
-                    
-    	            } catch (IOException e) {
-    	                e.printStackTrace();
-    	            } 
-                	System.out.println("Please enter the block Number: ");
-                	try {
-                		Block= commandInput.readLine();
-                    
-    	            } catch (IOException e) {
-    	                e.printStackTrace();
-    	            } 
-                	System.out.println("The name of the item is: "+itemName+" and the item detail is: "+itemDetail);
-                	data=com.WriteSingal(itemName, itemDetail,Block);
-                }
+                
                 else if(c.equals("read")){
                 	System.out.println("Please enter the item's name: ");
+                	int NoBlock=5;
+                	int startBlock=1;
+                	int idx=0;
                 	try {
                 		itemName = commandInput.readLine();
                     
@@ -198,7 +176,19 @@ public class TwoWaySerialComm {
                 	   
                 	    System.out.println("Reader returned error code: " + chkErr);
                     }
-                	System.out.println(Command.bytesToHexString(data, data.length));
+                	int length=(Integer.parseInt(Integer.toHexString((data[12]) & 0xFF))-30)*10+(Integer.parseInt(Integer.toHexString((data[11]) & 0xFF))-30);
+                	System.out.println("Data length is: "+length);
+                	
+                	int getTimes=(Integer.parseInt(Integer.toHexString((data[10]) & 0xFF))-30)*10+(Integer.parseInt(Integer.toHexString((data[9]) & 0xFF))-30);                	
+                	System.out.println("Achieve times of this item is: "+ getTimes);
+                	
+                	String boughtDate=byteToString(data[17])+byteToString(data[16])+byteToString(data[15])+byteToString(data[14])
+                				+byteToString(data[22])+byteToString(data[21])+byteToString(data[20])+byteToString(data[19]);
+                	System.out.println("Bought date of this item is: "+ boughtDate);
+                	String expireDate=byteToString(data[27])+byteToString(data[26])+byteToString(data[25])+byteToString(data[24])
+    								+byteToString(data[32])+byteToString(data[31])+byteToString(data[30])+byteToString(data[29]);
+                	System.out.println("Expire date of this item is: "+ expireDate);
+                	//System.out.println(Command.bytesToHexString(data, data.length));
                 	
                 }
                 
@@ -207,17 +197,16 @@ public class TwoWaySerialComm {
                 }
                
             }
-            /*try{
-            	
-            	out.flush();
-            }catch (IOException e) {
-                e.printStackTrace();
-            } */  
-            
             }
                
 	    }
 	   
+	   public static String byteToString(byte data){
+	         String cha;
+	         Integer value=Integer.parseInt(Integer.toHexString(data & 0xFF))-30;
+	         cha=Integer.toString(value);
+	         return cha;
+	   }
 	   public static byte chkErrorISO(byte[] data){
 		   byte error_code;
 		    if ((data[1] == 0x0a) & (data[5] & 0x10) != 0 ){ 
