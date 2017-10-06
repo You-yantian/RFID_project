@@ -36,7 +36,7 @@ public class TwoWaySerialComm {
 	                InputStream in = serialPort.getInputStream();
 	                OutputStream out = serialPort.getOutputStream();
 	                //(new Thread(new Function(in,out))).start();
-	                this.Function(in, out);
+	                this.Function(in,out);
 	                // Command com=new Command(in,out);
 	                
 	                //data=com.readVersion();
@@ -65,12 +65,12 @@ public class TwoWaySerialComm {
             String c=null;
             String itemName=null;
             String itemDetail=null;
-            Command com=new Command(in,out);
             System.out.println("Input the command: ");
             
             while(true){
 	        	try {
 	                c = commandInput.readLine();
+	               
                 
 	            } catch (IOException e) {
 	                e.printStackTrace();
@@ -80,6 +80,8 @@ public class TwoWaySerialComm {
 			
             if ( c !=null )
             {
+            	
+            	 Command com=new Command(in,out);
                 if (c.equals("readVersion")){
                 	data=com.readVersion();
  	                System.out.println("The reader version is: "+Integer.toHexString((data[8]) & 0xFF)+"."+Integer.toHexString((data[7]) & 0xFF));
@@ -117,6 +119,8 @@ public class TwoWaySerialComm {
                 }
                 
                 else if(c.equals("write")){
+                	int block=1;
+                	byte[]dataToWrite=new byte[4];
                 	System.out.println("Please enter the item's name: ");
                 	try {
                 		itemName = commandInput.readLine();
@@ -132,9 +136,53 @@ public class TwoWaySerialComm {
     	                e.printStackTrace();
     	            } 
                 	System.out.println("The name of the item is: "+itemName+" and the item detail is: "+itemDetail);
-                	data=com.Write(itemName, itemDetail);
+                    byte[] dataAll=(itemDetail.length()+itemDetail).getBytes();
+                    int remainLength=dataAll.length;
+                    int index=0;
+                    while(remainLength>0 ){
+                    	if(remainLength>=4){
+                    		for(index=0;index<4;index++){
+                    			dataToWrite[index]=dataAll[dataAll.length-remainLength+3-index];
+                    		}
+                    	} else{
+                    		dataToWrite=new byte[]{(byte)0,(byte)0,(byte)0,(byte)0};
+                    		for(index=0;index<remainLength;index++){
+                    			dataToWrite[3-index]=dataAll[dataAll.length-remainLength+index];
+                    		}
+                    	}
+                	    data=com.Write(itemName, dataToWrite,block);
+                	    remainLength-=4;
+                	    
+                	    block=block+1;
+                    }
                 }
-                
+               
+                else if(c.equals("writeSingal")){
+                	String Block="0";
+                	System.out.println("Please enter the item's name: ");
+                	try {
+                		itemName = commandInput.readLine();
+                    
+    	            } catch (IOException e) {
+    	                e.printStackTrace();
+    	            }               	
+                	System.out.println("Please enter the detail: ");
+                	try {
+                		itemDetail= commandInput.readLine();
+                    
+    	            } catch (IOException e) {
+    	                e.printStackTrace();
+    	            } 
+                	System.out.println("Please enter the block Number: ");
+                	try {
+                		Block= commandInput.readLine();
+                    
+    	            } catch (IOException e) {
+    	                e.printStackTrace();
+    	            } 
+                	System.out.println("The name of the item is: "+itemName+" and the item detail is: "+itemDetail);
+                	data=com.WriteSingal(itemName, itemDetail,Block);
+                }
                 else if(c.equals("read")){
                 	System.out.println("Please enter the item's name: ");
                 	try {
@@ -159,6 +207,13 @@ public class TwoWaySerialComm {
                 }
                
             }
+            /*try{
+            	
+            	out.flush();
+            }catch (IOException e) {
+                e.printStackTrace();
+            } */  
+            
             }
                
 	    }

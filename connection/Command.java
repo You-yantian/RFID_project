@@ -36,7 +36,9 @@ public class Command {
               int length_data = buffer[1] & 0xFF; 
               String data=bytesToHexString(buffer,len);
               len = in.read(buffer,2,length_data-2) ; 
-              
+              out.flush();
+              in.close();
+              //in.reset();
               //System.out.println("The reader version is: "+Integer.toHexString((buffer[8]) & 0xFF)+"."+Integer.toHexString((buffer[7]) & 0xFF));
               //System.out.println(bytesToHexString(buffer,length_data));
               //System.out.println(length_data);
@@ -83,19 +85,27 @@ public class Command {
           command[command_len - 1] = new Integer(chksum ^  0xFF).byteValue();
           //System.out.println("new command string is: "+bytesToHexString(command,command_len));
 
-      byte[] buffer=new byte[30];
+      byte[] buffer_tag=new byte[30];
       int length_data=0;
       int len=-1;
       try
       {	
       	   out.write(command);
-           len = in.read(buffer,0,1) ;
-           String SOF=(bytesToHexString(buffer,len));
-           len = in.read(buffer,1,1) ;
-           length_data = buffer[1] & 0xFF; 
-           
-           len = in.read(buffer,2,length_data-2) ; 
-           String data=bytesToHexString(buffer,length_data);
+           len = in.read(buffer_tag,0,1) ;
+           String SOF=(bytesToHexString(buffer_tag,len));
+           while(!SOF.equals("01")){
+        	   len = in.read(buffer_tag,0,1) ;
+               SOF=(bytesToHexString(buffer_tag,len));
+           }
+           len = in.read(buffer_tag,1,1) ; 
+           length_data = buffer_tag[1] & 0xFF;
+           System.out.println("The data length of read Tag Detailis: "+buffer_tag[1]);                                      	    
+           if (buffer_tag[1]>2){
+           len = in.read(buffer_tag,2,length_data-2) ; 
+           String data=bytesToHexString(buffer_tag,length_data);
+           }
+           out.flush();
+           in.close();
            //System.out.println("The data is: "+data);
            //System.out.println(length_data);	                    
       }
@@ -104,19 +114,19 @@ public class Command {
           e.printStackTrace();
           System.exit(1);
       }            
-      if(length_data>0){
+      if(length_data>2){
          chksum = 0;
          idx = 0;
     	 while (idx < (length_data-2)){
-    		      chksum ^= buffer[idx];
+    		      chksum ^= buffer_tag[idx];
     		      idx += 1;
     	 }
-    	 if (chksum != (buffer[length_data - 2])){  
+    	 if (chksum != (buffer_tag[length_data - 2])){  
     		System.out.println("Checksum error!");
     		return "error".getBytes();
     	 }
     	 else 
-    		 return buffer;
+    		 return buffer_tag;
       }
       else
     	  return "error".getBytes();
@@ -189,18 +199,33 @@ public class Command {
           System.out.println("new command string is: "+bytesToHexString(command,command_len));
           int length_data=0;
           int len=-1;
+          //int start=0;
+          //byte[]temp=new byte[10];
           try
           {	
-          	   out.write(command);
+          	   buffer=null;
+          	   buffer=new byte[50];
+        	   out.write(command);
                len = in.read(buffer,0,1) ;
                String SOF=(bytesToHexString(buffer,len));
-               len = in.read(buffer,1,1) ;
-               length_data = buffer[1] & 0xFF; 
+               while(!SOF.equals("01")){
+            	   len = in.read(buffer,0,1) ;
+                   SOF=(bytesToHexString(buffer,len));
+               }
+               len = in.read(buffer,1,1) ; 
+               length_data = buffer[1] & 0xFF;
+               System.out.println("The data length is: "+buffer[1]);
+               if (buffer[1]>2){                                 	              
+                 len = in.read(buffer,2,length_data-2) ;               
+                 String data=bytesToHexString(buffer,length_data);
+                 
+                 System.out.println("The data is: "+data);
                
-               len = in.read(buffer,2,length_data-2) ; 
-               String data=bytesToHexString(buffer,length_data);
-               //System.out.println("The data is: "+data);
-               //System.out.println(length_data);	                    
+               //System.out.println(length_data);	           
+                 
+               }
+               out.flush();
+               in.close();
           }
           catch ( IOException e )
           {
@@ -211,8 +236,8 @@ public class Command {
 	  }
 	  
 	  
-	//***********************Write Item Detail****************************//
-	  public byte[] Write(String itemName,String itemDetail){
+	//***********************Write Singal Item Detail****************************//
+	  public byte[] WriteSingal(String itemName,String itemDetail,String Block){
 		  byte[] UID;
 		  switch(itemName){
 		  case "milk":
@@ -228,7 +253,7 @@ public class Command {
 			  UID=null;
 			  break;
 		  }
-		  byte[] dataToWrite=(itemDetail.length()+itemDetail).getBytes();
+		  byte[] dataToWrite=(itemDetail).getBytes();
 		  
 		  ByteBuffer command_detail=ByteBuffer.allocate(25);
 		  // 0: SOF
@@ -262,58 +287,58 @@ public class Command {
         	  System.out.println("Wrong item name!");
 			  System.exit(1);
           }
-     
+          //****fill in the Block number******
+          command[18]=(byte)(Integer.parseInt(Block));
+          
           //****fill in the Block Data******
            System.out.println("the length of data to write is "+dataToWrite.length);
            System.out.println("the content of data to write is "+bytesToHexString(dataToWrite,dataToWrite.length));
            byte result=0;
-           int remainLength=dataToWrite.length;
-           byte[] buffer=new byte[80];
+           
+           byte[] buffer_write=new byte[60];
            int length_data=0;
            int len=-1;
-           int block=1;
-           while(remainLength>0 & result==0){
-        	 //****fill in the Block number******
-               command[18]=(byte)(block);
-               
-        	   if(remainLength>4){
+          
+                if(dataToWrite.length<=4){//& result==0){
+        	        	 
         	       for(idx=0;idx<4;idx++){
-             	   command[19+idx]=dataToWrite[dataToWrite.length-remainLength+3-idx];
-                   }
-        	   } 
-        	   else{
-        		   command[19]=0x00;
-        		   command[20]=0x00;
-        		   command[21]=0x00;
-        		   command[22]=0x00;
-        		   for(idx=0;idx<remainLength;idx++){
-        		   command[22-idx]=dataToWrite[dataToWrite.length-remainLength+idx];
-        		   }
-        	   }
+             	   command[19+idx]=dataToWrite[dataToWrite.length-1-idx];
+                 }
+
         	   
-        	   //****fill in the checksum******
+        	   
+           //****fill in the checksum******
                idx=0;
                while(idx<(command_len-2)){
              	  chksum^=command[idx];
              	  idx+=1;
                }
                command[command_len-2]=chksum;
-               command[command_len - 1] = new Integer(chksum ^  0xFF).byteValue();
+               command[command_len-1] = new Integer(chksum ^  0xFF).byteValue();
                
-               System.out.println("new command string is: "+bytesToHexString(command,command_len));
-               //**********write to Tag***********               
+               
+           //**********write to Tag***********               
                try
                {	
-            	    buffer=new byte[30]; 
+            	    System.out.println("new command string is: "+bytesToHexString(command,command_len));
+            	    buffer_write=new byte[60]; 
             	    out.write(command);
-                    len = in.read(buffer,0,1) ;
-                    String SOF=(bytesToHexString(buffer,len));
-                    len = in.read(buffer,1,1) ;
-                    length_data = buffer[1] & 0xFF;                    
-                    len = in.read(buffer,2,length_data-2) ; 
-                    String data=bytesToHexString(buffer,length_data);
-                    System.out.println("The returned data is: "+data);
-                    System.out.println("The length of returned data is: "+length_data);	  
+                    len = in.read(buffer_write,0,1);
+                    String SOF=(bytesToHexString(buffer_write,len));
+                    while(!SOF.equals("01")){
+                 	   len = in.read(buffer_write,0,1) ;
+                        SOF=(bytesToHexString(buffer_write,len));
+                    }
+                    len = in.read(buffer_write,1,1) ; 
+                    length_data = buffer_write[1] & 0xFF; 
+                    if(buffer_write[1]>2){
+                    	len = in.read(buffer_write,2,length_data-2) ;
+                    	String data=bytesToHexString(buffer_write,length_data);
+                    	System.out.println("The returned data is: "+data);
+                    	System.out.println("The length of returned data is: "+length_data);	
+                    }
+                    out.flush();
+                    in.close();
                     /*if ((buffer.length == 10) & (buffer[5] & 0x10) != 0 ){ 
          		       result = buffer[7];
          		       System.out.println("Error occur. The error code is: "+result);
@@ -333,11 +358,135 @@ public class Command {
                    e.printStackTrace();
                    System.exit(1);
                }   
-               remainLength-=4;
-               block=block+1;
+               
+           }else{
+        	   System.out.println("Input too many datas");
            }
          
-		  return buffer;
+		  return buffer_write;
+	  }
+	  
+	//***********************Write Item Detail****************************//
+	  public byte[] Write(String itemName, byte[] dataToWrite,int block){
+		  byte[] UID;
+		  switch(itemName){
+		  case "milk":
+			  UID=new byte[]{(byte)0xE0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1F,(byte)0x90,(byte)0x84,(byte)0x3D};
+			  break;
+		  case "egg":
+			  UID=new byte[]{(byte)0xE0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1F,(byte)0x90,(byte)0x84,(byte)0x39};
+			  break;
+		  case "carrot" :
+			  UID=new byte[]{(byte)0xE0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1F,(byte)0x90,(byte)0x84,(byte)0x38};
+			  break;
+		  default:
+			  UID=null;
+			  break;
+		  }
+		  
+		  ByteBuffer command_detail=ByteBuffer.allocate(25);
+		  // 0: SOF
+		  // 1 & 2: length LSB and MSB respectively, filled in later
+		  // 3 & 4: TI reader address fields, alsways set to 0
+		  // 5: TI reader command flags
+		  // 6: TI reader ISO pass thru command, always 0x60
+          command_detail.put(new byte[]{(byte)0x01,(byte)0, (byte)0, (byte)0, (byte)0, (byte)0, (byte)0x60});
+          // 7: ISO reader config byte 0.The value in this case is 0x11
+          // 8: Tag flags. Option flag must be set in this command. o_f=1, s_f=0, a_f=1
+          // 9: The ISO command.  In this case 0x21
+          command_detail.put(new byte[]{(byte)0x11,(byte) 0x63, (byte)0x21});
+          //8 bytes for the UID, 1 byte for the block number and 4 bytes for the block data.
+          command_detail.put(new byte[]{0,0,0,0,0,0,0,0,0,0,0,0,0});
+          //the two checksum bytes
+          command_detail.put(new byte[]{0,0});
+          byte[]command=command_detail.array();
+          
+          
+          //****fill in the data command length******
+	      Integer command_len = command.length;
+	      command[1]=command_len.byteValue();
+	      byte chksum=0;
+          int idx=0;
+          //****fill in the UID******
+          if(UID!=null){
+        	  for(idx=1;idx<9;idx++){
+            	  command[9+idx]=UID[8-idx];
+              }
+          }else{
+        	  System.out.println("Wrong item name!");
+			  System.exit(1);
+          }
+     	  //****fill in the Block number******
+          command[18]=(byte)(block);
+          
+          //****fill in the Block Data******
+           System.out.println("the length of data to write is "+dataToWrite.length);
+           System.out.println("the content of data to write is "+bytesToHexString(dataToWrite,dataToWrite.length));
+           byte result=0;
+           byte[] buffer_write=new byte[80];
+           int length_data=0;
+           int len=-1;
+           for(idx=0;idx<4;idx++){
+         	   command[19+idx]=dataToWrite[idx];
+             }
+               
+        	   //****fill in the checksum******
+               idx=0;
+               while(idx<(command_len-2)){
+             	  chksum^=command[idx];
+             	  idx+=1;
+               }
+               command[command_len-2]=chksum;
+               command[command_len-1] = new Integer(chksum ^  0xFF).byteValue();
+               
+               
+               //**********write to Tag***********               
+               try
+               {	
+            	    System.out.println("new command string is: "+bytesToHexString(command,command_len));
+            	    buffer_write=new byte[80];
+            	    out.flush();
+            	    out.write(command);
+                    len = in.read(buffer_write,0,1);
+                    String SOF=(bytesToHexString(buffer_write,len));
+                    /*while(!SOF.equals("01")){
+                  	   len = in.read(buffer_write,0,1) ;
+                         SOF=(bytesToHexString(buffer_write,len));
+                     }*/
+                    len = in.read(buffer_write,1,1) ;
+                    length_data = buffer_write[1] & 0xFF;
+                    if(buffer_write[1]>2){
+                    len = in.read(buffer_write,2,length_data-2) ; 
+                    String data=bytesToHexString(buffer_write,length_data);
+                    System.out.println("The returned data is: "+data);
+                    System.out.println("The length of returned data is: "+length_data);	
+                    }else{
+                    	System.out.println("Data return failed. The returned SOF is: "+SOF+" The returned length is: "+buffer_write[1]);
+                    }
+            	    
+                    /*if ((buffer.length == 10) & (buffer[5] & 0x10) != 0 ){ 
+         		       result = buffer[7];
+         		       System.out.println("Error occur. The error code is: "+result);
+         		        //error_meaning = {
+         		          //  "0x1" : "Transponder not found.",
+         		          // "0x2" : "Command not supported.",
+         		          //  "0x4" : "Packet flags invalid for command.",
+         		          //  }.get(hex(rddat[7]), "Unknown error code.")
+         		    }
+         		    else{
+         		        result = 0  ;
+         		        //String error_meaning = "OK";
+         		    }*/
+               }
+               catch ( IOException e )
+               {
+                   e.printStackTrace();
+                   System.exit(1);
+               }   
+
+           
+         
+		  return buffer_write;
 	  }
 	//***********************Show Hex String****************************//
 	    public static String bytesToHexString(byte[] src,int length){  
