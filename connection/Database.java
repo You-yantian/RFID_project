@@ -32,12 +32,12 @@ public class Database {
 		        	  ps1.setString(2,itemName);
 		        	  ResultSet rs=ps1.executeQuery();  
 		        	  status=rs.next(); 
-		        	  if(status==true){
+		        	  //if(status==true){
 		        		  //change get times of item
 		        		   
-		        	  }else{
+		        	  //}else{
 		        		  //insert a new item
-		        	    String sql ="INSERT INTO items (iditems, name,boughtDay,expireDay,time,useTime) VALUES (?, ?, ?, ?,?,?)";
+		        	    String sql ="INSERT INTO items (iditems, name,boughtDay,expireDay,times,useTime) VALUES (?, ?, ?, ?,?,?)";
 		      	        PreparedStatement ps = conn.prepareStatement(sql);
 		      	        ps.setString(1, itemID);
 		      	        ps.setString(2, itemName);
@@ -47,7 +47,7 @@ public class Database {
 		      	        ps.setString(6,getTime);
 		      	        
 		      	        ps.executeUpdate();
-		        	  }
+		        	  //}
 		        
 		 }catch (Exception e) {
 				e.printStackTrace();

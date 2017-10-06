@@ -10,6 +10,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.util.Scanner;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+
 public class TwoWaySerialComm {
 	 public TwoWaySerialComm()
 	    {
@@ -163,6 +166,7 @@ public class TwoWaySerialComm {
                 	int NoBlock=5;
                 	int startBlock=1;
                 	int idx=0;
+                	String itemID=null;
                 	try {
                 		itemName = commandInput.readLine();
                     
@@ -170,6 +174,20 @@ public class TwoWaySerialComm {
     	                e.printStackTrace();
     	            }    
                 	System.out.println("The name of the item is: "+itemName);
+                	switch(itemName){
+                	     case "milk":
+                	    	 itemID="E00700001F90843D";
+                	    	 break;
+                	     case "egg":
+                	    	 itemID="E00700001F908439";
+                	    	 break;
+                	     case "carrot" :
+                	    	 itemID="E00700001F908438";
+                	    	 break;
+                	     default:
+               			  itemID=null;
+               			  break;
+                	}
                 	data=com.Read(itemName);
                 	byte chkErr=chkErrorISO(data);
                 	if (chkErr!=0){
@@ -179,8 +197,8 @@ public class TwoWaySerialComm {
                 	int length=(Integer.parseInt(Integer.toHexString((data[12]) & 0xFF))-30)*10+(Integer.parseInt(Integer.toHexString((data[11]) & 0xFF))-30);
                 	System.out.println("Data length is: "+length);
                 	
-                	int getTimes=(Integer.parseInt(Integer.toHexString((data[10]) & 0xFF))-30)*10+(Integer.parseInt(Integer.toHexString((data[9]) & 0xFF))-30);                	
-                	System.out.println("Achieve times of this item is: "+ getTimes);
+                	int Times=(Integer.parseInt(Integer.toHexString((data[10]) & 0xFF))-30)*10+(Integer.parseInt(Integer.toHexString((data[9]) & 0xFF))-30);                	
+                	System.out.println("Achieve times of this item is: "+ Times);
                 	
                 	String boughtDate=byteToString(data[17])+byteToString(data[16])+byteToString(data[15])+byteToString(data[14])
                 				+byteToString(data[22])+byteToString(data[21])+byteToString(data[20])+byteToString(data[19]);
@@ -189,7 +207,11 @@ public class TwoWaySerialComm {
     								+byteToString(data[32])+byteToString(data[31])+byteToString(data[30])+byteToString(data[29]);
                 	System.out.println("Expire date of this item is: "+ expireDate);
                 	//System.out.println(Command.bytesToHexString(data, data.length));
-                	
+                	Database item=new Database();
+                	Calendar cal = Calendar.getInstance();
+                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+                    String getTime=sdf.format(cal.getTime());
+                	item.storeData(itemID, itemName, boughtDate, expireDate,getTime , Times);
                 }
                 
                 else{
