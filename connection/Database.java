@@ -37,7 +37,7 @@ public class Database {
 		        		   
 		        	  //}else{
 		        		  //insert a new item
-		        	    String sql ="INSERT INTO items (iditems, name,boughtDay,expireDay,times,useTime) VALUES (?, ?, ?, ?,?,?)";
+		        	    String sql ="INSERT INTO items (iditems, name, boughtDay,expireDay,times,useTime) VALUES (?, ?, ?, ?,?,?)";
 		      	        PreparedStatement ps = conn.prepareStatement(sql);
 		      	        ps.setString(1, itemID);
 		      	        ps.setString(2, itemName);
@@ -61,5 +61,23 @@ public class Database {
 		          }
 		       }
 	return status;
+	}
+	
+	public String searchItem(String itemID){
+		String name="error";
+		try{  
+			 Class.forName("com.mysql.jdbc.Driver");
+		     conn = DriverManager.getConnection(URL, "root", "yantian94");  
+		  PreparedStatement ps=conn.prepareStatement(  
+		    "select name from items where iditems=? ");  
+		  ps.setString(1,itemID);    
+		  ResultSet rs=ps.executeQuery(); 
+		  if (rs.next()==true){
+		  name=rs.getString("name");  
+		  }else{
+			  System.out.println("Item not exist!");
+		  }
+		 }catch(Exception e){e.printStackTrace();}  
+		return name;
 	}
 }

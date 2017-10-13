@@ -123,13 +123,13 @@ public class Command {
     	 }
     	 if (chksum != (buffer_tag[length_data - 2])){  
     		System.out.println("Checksum error!");
-    		return "error".getBytes();
+    		return "error1".getBytes();
     	 }
     	 else 
     		 return buffer_tag;
       }
       else
-    	  return "error".getBytes();
+    	  return "error2".getBytes();
 	  }
 	  
 	  
@@ -139,13 +139,13 @@ public class Command {
 		  byte[] UID;
 		  switch(itemName){
 		  case "milk":
-			  UID=new byte[]{(byte)0xE0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1F,(byte)0x90,(byte)0x84,(byte)0x3D};
+			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x3d};
 			  break;
 		  case "egg":
-			  UID=new byte[]{(byte)0xE0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1F,(byte)0x90,(byte)0x84,(byte)0x39};
+			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x39};
 			  break;
 		  case "carrot" :
-			  UID=new byte[]{(byte)0xE0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1F,(byte)0x90,(byte)0x84,(byte)0x38};
+			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x38};
 			  break;
 		  default:
 			  UID=null;
