@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 public class Command {
 	InputStream in;
     OutputStream out;
+    byte[]command;
 	public Command(InputStream in,OutputStream out)
     {
        this.in=in;
@@ -21,7 +22,7 @@ public class Command {
 	
 	//**********************Reader Detail************************//
 	 public byte[] readVersion(){
-	    	byte[]command=new byte[]{(byte)0x01, (byte)0x09, (byte)0, (byte)0,(byte) 0,(byte) 0, (byte)0xf0, (byte)0xf8,(byte)0x07};
+	    	command=new byte[]{(byte)0x01, (byte)0x09, (byte)0, (byte)0,(byte) 0,(byte) 0, (byte)0xf0, (byte)0xf8,(byte)0x07};
          //System.out.println(bytesToHexString(command,command.length));
          
          byte[] buffer=new byte[20];
@@ -30,13 +31,14 @@ public class Command {
          try
          {	
          	  out.write(command);
+         	  out.flush();
+              out.close();
               len = in.read(buffer,0,1) ;
               String SOF=(bytesToHexString(buffer,len));
               len = in.read(buffer,1,1) ;
               int length_data = buffer[1] & 0xFF; 
               String data=bytesToHexString(buffer,len);
-              len = in.read(buffer,2,length_data-2) ; 
-              out.flush();
+              len = in.read(buffer,2,length_data-2) ;             
               in.close();
               //in.reset();
               //System.out.println("The reader version is: "+Integer.toHexString((buffer[8]) & 0xFF)+"."+Integer.toHexString((buffer[7]) & 0xFF));
@@ -51,6 +53,7 @@ public class Command {
              e.printStackTrace();
              System.exit(1);
          }            
+         pause();
          return buffer;
 	    }
 	 
@@ -91,6 +94,8 @@ public class Command {
       try
       {	
       	   out.write(command);
+      	   out.flush();
+           out.close();
            len = in.read(buffer_tag,0,1) ;
            String SOF=(bytesToHexString(buffer_tag,len));
            while(!SOF.equals("01")){
@@ -99,12 +104,12 @@ public class Command {
            }
            len = in.read(buffer_tag,1,1) ; 
            length_data = buffer_tag[1] & 0xFF;
-           System.out.println("The data length of read Tag Detailis: "+buffer_tag[1]);                                      	    
+           System.out.println("The data length of read Tag Detail is: "+buffer_tag[1]);                                      	    
            if (buffer_tag[1]>2){
            len = in.read(buffer_tag,2,length_data-2) ; 
            String data=bytesToHexString(buffer_tag,length_data);
            }
-           out.flush();
+           
            in.close();
            //System.out.println("The data is: "+data);
            //System.out.println(length_data);	                    
@@ -124,9 +129,12 @@ public class Command {
     	 if (chksum != (buffer_tag[length_data - 2])){  
     		System.out.println("Checksum error!");
     		return "error1".getBytes();
+    		
     	 }
-    	 else 
+    	 else {
+    		 pause();
     		 return buffer_tag;
+    	 }
       }
       else
     	  return "error2".getBytes();
@@ -134,9 +142,10 @@ public class Command {
 	  
 	  
 	//***********************Read Item Detail****************************//
-	  public byte[] Read(String itemName){
+	  public byte[] Read(String itemName,byte[]itemID){
 		  byte[] buffer=new byte[50];
-		  byte[] UID;
+		  byte[] flushBuffer=new byte[20];
+		  byte[] UID;//=itemID;
 		  switch(itemName){
 		  case "milk":
 			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x3d};
@@ -206,6 +215,8 @@ public class Command {
           	   buffer=null;
           	   buffer=new byte[50];
         	   out.write(command);
+        	   out.flush();
+               out.close();
                len = in.read(buffer,0,1) ;
                String SOF=(bytesToHexString(buffer,len));
                while(!SOF.equals("01")){
@@ -223,31 +234,37 @@ public class Command {
                
                //System.out.println(length_data);	           
                  
+               }else{
+            	   buffer="error".getBytes();
                }
-               out.flush();
+               if(in.available()!=0){
+            	   in.read(flushBuffer);
+            	   System.out.println("The remain data of read is: "+flushBuffer.toString());
+               }
                in.close();
           }
           catch ( IOException e )
           {
               e.printStackTrace();
               System.exit(1);
-          }           
+          }        
+          pause();
 		  return buffer;
 	  }
 	  
 	  
 	//***********************Write Item Detail****************************//
-	  public byte[] Write(String itemName, byte[] dataToWrite,int block){
-		  byte[] UID;
+	  public byte[] Write(String itemName, byte[] dataToWrite,int block, byte[] itemID){
+		  byte[] UID;//=itemID;
 		  switch(itemName){
 		  case "milk":
-			  UID=new byte[]{(byte)0xE0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1F,(byte)0x90,(byte)0x84,(byte)0x3D};
+			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x3d};
 			  break;
 		  case "egg":
-			  UID=new byte[]{(byte)0xE0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1F,(byte)0x90,(byte)0x84,(byte)0x39};
+			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x39};
 			  break;
 		  case "carrot" :
-			  UID=new byte[]{(byte)0xE0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1F,(byte)0x90,(byte)0x84,(byte)0x38};
+			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x38};
 			  break;
 		  default:
 			  UID=null;
@@ -294,6 +311,7 @@ public class Command {
            System.out.println("the content of data to write is "+bytesToHexString(dataToWrite,dataToWrite.length));
            byte result=0;
            byte[] buffer_write=new byte[80];
+           byte[] flushBuffer=new byte[20];
            int length_data=0;
            int len=-1;
            for(idx=0;idx<4;idx++){
@@ -315,25 +333,34 @@ public class Command {
                {	
             	    System.out.println("new command string is: "+bytesToHexString(command,command_len));
             	    buffer_write=new byte[80];
-            	    out.flush();
             	    out.write(command);
+            	    out.flush();
+                    out.close();
                     len = in.read(buffer_write,0,1);
                     String SOF=(bytesToHexString(buffer_write,len));
-                    /*while(!SOF.equals("01")){
+                    while(!SOF.equals("01")){
                   	   len = in.read(buffer_write,0,1) ;
                          SOF=(bytesToHexString(buffer_write,len));
-                     }*/
+                     }                   
                     len = in.read(buffer_write,1,1) ;
                     length_data = buffer_write[1] & 0xFF;
+                    
                     if(buffer_write[1]>2){
-                    len = in.read(buffer_write,2,length_data-2) ; 
-                    String data=bytesToHexString(buffer_write,length_data);
-                    System.out.println("The returned data is: "+data);
-                    System.out.println("The length of returned data is: "+length_data);	
-                    }else{
-                    	System.out.println("Data return failed. The returned SOF is: "+SOF+" The returned length is: "+buffer_write[1]);
+                      len = in.read(buffer_write,2,length_data-2) ; 
+                      String data=bytesToHexString(buffer_write,length_data);
+                      System.out.println("The returned data is: "+data);
+                      System.out.println("The length of returned data is: "+length_data);	
+                      
                     }
-            	    
+                    else{
+                    	
+                    	System.out.println("Data return failed. The returned SOF is: "+SOF+" The returned length is: "+buffer_write[1]);
+                    	buffer_write="error".getBytes();
+                    }
+                    if(in.available()!=0){
+                 	   in.read(flushBuffer);
+                 	   System.out.println("The remain data of write is: "+flushBuffer.toString());
+                    }
                     /*if ((buffer.length == 10) & (buffer[5] & 0x10) != 0 ){ 
          		       result = buffer[7];
          		       System.out.println("Error occur. The error code is: "+result);
@@ -354,7 +381,7 @@ public class Command {
                    System.exit(1);
                }   
 
-           
+               pause();
          
 		  return buffer_write;
 	  }
@@ -374,4 +401,14 @@ public class Command {
 	        }  
 	        return stringBuilder.toString();  
 	    }
+	//*************pause*************************//
+	    public void pause(){
+			   int i,j,k;
+			   for(i=0;i<100;i++){
+				   for(j=0;j<100;j++){
+					  k= i+j;
+				   }
+			   }			   	   
+		   }
+	    //////////////////////////////////////
 }
