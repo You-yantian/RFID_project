@@ -143,7 +143,7 @@ public class RFIDHandler implements Initializable{
                 try {
                     showResult.clear();
                     item = server.read();
-
+                    showResult.appendText("The Name of this item is: "+ item.itemName+"\n");
                     showResult.appendText("Achieve times of this item is: "+ item.times+"\n");
                     showResult.appendText("Bought date of this item is: "+ item.boughtDate+"\n");
                     showResult.appendText("Expire date of this item is: "+ item.expireDate+"\n");
@@ -216,6 +216,9 @@ public class RFIDHandler implements Initializable{
 
                     showResult.appendText(message+"\n");
                     VersionButton.setDisable(false);
+                    itemName.clear();
+                    boughtDate.clear();
+                    expireDate.clear();
                 } catch (IOException e) {
                     System.err.println("Unexpected Error");
                 }

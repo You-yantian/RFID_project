@@ -7,11 +7,11 @@ public class Item {
     Integer times;
     public Item()
     {
-       itemID="null";
-       itemName="null";
-       boughtDate="null";
-       expireDate="null";
-       getTime="null";
+       itemID="00";
+       itemName="00";
+       boughtDate="00000000";
+       expireDate="00000000";
+       getTime="0";
        length=0;
        times=0;
 
