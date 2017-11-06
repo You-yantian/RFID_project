@@ -79,7 +79,7 @@ public class ServerConnection {
         	info.itemName="Read Tag detail failed. Try command again";
         }else{
         System.arraycopy(fullData,1,itemName,0,length_data);
-        System.out.println("The Length of this item is: "+length_data);
+        System.out.println("The Length of item Name is: "+length_data);
         System.arraycopy(fullData,length_data+1,data,0,len-length_data-1);
         info.itemName=new String(itemName);
         info.times=(Integer.parseInt(Integer.toHexString((data[10]) & 0xFF))-30)*10+(Integer.parseInt(Integer.toHexString((data[9]) & 0xFF))-30);
@@ -102,11 +102,11 @@ public class ServerConnection {
     String record() throws IOException {
     	String info;
     	String toServer="record";
-        byte[] data = new byte[30];
+        byte[] data = new byte[50];
         byte[] msg = toServer.getBytes();
         out.write(msg, 0, msg.length);
         out.flush();
-        int n = in.read(data, 0, 30);
+        int n = in.read(data, 0, 50);
         info=new String(data);
         return info;
     }
@@ -116,7 +116,7 @@ public class ServerConnection {
         byte[] msg = toServer.getBytes();
         out.write(msg, 0, msg.length);
         out.flush();
-        int n = in.read(data, 0, 30);
+        int n = in.read(data, 0, 50);
         info=new String(data);
         return info;
     }

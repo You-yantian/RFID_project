@@ -36,6 +36,8 @@ public class RFIDHandler implements Initializable{
     @FXML
     private TextField itemName;
     @FXML
+    private TextField MaxTimes;
+    @FXML
     private TextField boughtDate;
     @FXML
     private TextField expireDate;
@@ -207,8 +209,9 @@ public class RFIDHandler implements Initializable{
             setOnSucceeded((WorkerStateEvent event) -> {
                 server = getValue();
                 String data=itemName.getText().length()+itemName.getText()+
-                		boughtDate.getText().length()+boughtDate.getText()+
-                		expireDate.getText().length()+expireDate.getText();
+                			MaxTimes.getText().length()+MaxTimes.getText()+
+                			boughtDate.getText().length()+boughtDate.getText()+
+                			expireDate.getText().length()+expireDate.getText();
                 System.out.println(data);
                 try {
                     showResult.clear();
@@ -219,6 +222,7 @@ public class RFIDHandler implements Initializable{
                     itemName.clear();
                     boughtDate.clear();
                     expireDate.clear();
+                    MaxTimes.clear();
                 } catch (IOException e) {
                     System.err.println("Unexpected Error");
                 }
