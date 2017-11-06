@@ -237,6 +237,7 @@ public class ServerComm {
 			private BufferedOutputStream clientOut;
 			private Message message;
 			private String c;
+			byte []IDHex=new byte[8];
 			public write ( InputStream in,OutputStream out,BufferedOutputStream clientOut,String c )
 				{
 				this.com=new Command(in,out);
@@ -272,6 +273,9 @@ public class ServerComm {
 		           		//String.format("%8s", Integer.toBinaryString(b2 & 0xFF)).replace(' ', '0');
 
 		           		if(data1[7]==0x01){
+		           			for(int i=0;i<8;i++){
+	            				IDHex[i]=data1[20-i];
+	            			}
 		           			itemID=String.format("%2s",Integer.toHexString((data1[20]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data1[19]) & 0xFF)).replace(' ','0')
 		           					+ String.format("%2s",Integer.toHexString((data1[18]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data1[17]) & 0xFF)).replace(' ','0')
 		           					//+ Integer.toHexString((data[18]) & 0xFF) + Integer.toHexString((data[17]) & 0xFF)
@@ -287,10 +291,15 @@ public class ServerComm {
 		           		System.out.println("The received message is "+c);
 		           		int len_Name=Integer.parseInt(c.substring(0,1));
 		           		message.itemName=c.substring(1,1+len_Name);
-		           		int len_boughtDate=Integer.parseInt(c.substring(1+len_Name,1+len_Name+1));
-		           		message.boughtDate=c.substring(1+len_Name+1,1+len_Name+1+len_boughtDate);
-		           		int len_expireDate=Integer.parseInt(c.substring(1+len_Name+1+len_boughtDate,1+len_Name+1+len_boughtDate+1));
-		           		message.expireDate=c.substring(1+len_Name+1+len_boughtDate+1);
+
+		           		int len_MaxTimes=Integer.parseInt(c.substring(1+len_Name,1+len_Name+1));
+		           	    message.Maxtimes=Integer.parseInt(c.substring(1+len_Name+1,1+len_Name+1+len_MaxTimes));
+
+		           	    int len_boughtDate=Integer.parseInt(c.substring(1+len_Name+1+len_MaxTimes,1+len_Name+1+len_MaxTimes+1));
+		           		message.boughtDate=c.substring(1+len_Name+1+len_MaxTimes+1,1+len_Name+1+len_MaxTimes+1+len_boughtDate);
+
+		           		int len_expireDate=Integer.parseInt(c.substring(1+len_Name+1+len_MaxTimes+1+len_boughtDate,1+len_Name+1+len_MaxTimes+1+len_boughtDate+1));
+		           		message.expireDate=c.substring(1+len_Name+1+len_MaxTimes+1+len_boughtDate+1);
 		           		//System.out.println("Please enter the maximum times you want to consume this item with in one week: ");
 		           		//MaxTime=commandInput.readLine();
 			            } catch (Exception e) {
@@ -319,7 +328,7 @@ public class ServerComm {
 		               			dataToWrite[3-index]=dataAll[dataAll.length-remainLength+index];
 		               		}
 		               	}
-		           	    data=com.Write(message.itemName, dataToWrite,block,itemID.getBytes());
+		           	    data=com.Write(message.itemName, dataToWrite,block,IDHex);
 		           	    remainLength-=4;
 
 		           	    block=block+1;
@@ -333,7 +342,7 @@ public class ServerComm {
 		                	Calendar cal = Calendar.getInstance();
 		                    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 		                    String getTime=sdf.format(cal.getTime());
-		               	    item.storeData(itemID, message.itemName, message.boughtDate, message.expireDate,getTime,0);
+		               	    item.storeData(itemID, message.itemName, message.boughtDate, message.expireDate,getTime,0,message.Maxtimes);
 		               	    clientOut.write("Write Success".getBytes());
 		                 }else{
 		                	clientOut.write("Write failed! Try again".getBytes());
@@ -367,6 +376,7 @@ public class ServerComm {
 				private	Command com;
 				private BufferedOutputStream clientOut;
 				private Message message;
+				byte []IDHex=new byte[8];
 				public read ( InputStream in,OutputStream out,BufferedOutputStream clientOut )
 				{
 				this.com=new Command(in,out);
@@ -399,6 +409,9 @@ public class ServerComm {
 	            	else{
 	            		//String.format("%8s", Integer.toBinaryString(b2 & 0xFF)).replace(' ', '0');
 	            		if(data[7]==0x01){
+	            			for(int i=0;i<8;i++){
+	            				IDHex[i]=data[20-i];
+	            			}
 	            			itemID=String.format("%2s",Integer.toHexString((data[20]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[19]) & 0xFF)).replace(' ','0')
 	            					+ String.format("%2s",Integer.toHexString((data[18]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[17]) & 0xFF)).replace(' ','0')
 	            					//+ Integer.toHexString((data[18]) & 0xFF) + Integer.toHexString((data[17]) & 0xFF)
@@ -409,19 +422,19 @@ public class ServerComm {
 
 
 	            	///*****get item name*******///
-	            	message.itemName=item.searchItem(itemID);
+	            	   message=item.searchItem(itemID);
 	            	///*************************///
 	                	int NoBlock=5;
 	                	int startBlock=1;
 	                	int idx=0;
 
-	                	System.out.println("The name of the item is: "+message.itemName);
-	                	/*try{
+	                	System.out.println("The name of the item is: "+message.itemName+" Max times is: "+message.Maxtimes);
+	                	try{
 	                	Thread.sleep(100);
 	                	}catch (Exception e){
 	            	            e.printStackTrace();
-	                	}*/
-	                	data=com.Read(message.itemName,itemID.getBytes());
+	                	}
+	                	data=com.Read(message.itemName,IDHex);
 	                	chkErr=chkErrorISO(data);
 	                	if (chkErr!=0){
 
@@ -481,7 +494,7 @@ public class ServerComm {
 			private String itemDetail=null;
 			public Database item=new Database();
 			private	Command com;
-
+			byte []IDHex=new byte[8];
 			private BufferedOutputStream clientOut;
 			private Message message;
 				public record ( InputStream in,OutputStream out,BufferedOutputStream clientOut )
@@ -516,7 +529,10 @@ public class ServerComm {
 						}
 						else{
 							//String.format("%8s", Integer.toBinaryString(b2 & 0xFF)).replace(' ', '0');
-							if(data[7]==0x01){
+							//if(data[7]==0x01){
+								for(int i=0;i<8;i++){
+		            				IDHex[i]=data[20-i];
+		            			}
 								itemID=String.format("%2s",Integer.toHexString((data[20]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[19]) & 0xFF)).replace(' ','0')
 										+ String.format("%2s",Integer.toHexString((data[18]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[17]) & 0xFF)).replace(' ','0')
 										//+ Integer.toHexString((data[18]) & 0xFF) + Integer.toHexString((data[17]) & 0xFF)
@@ -525,14 +541,14 @@ public class ServerComm {
 								System.out.println("ID is :"+ itemID);
 								//System.out.println("DSFID: 0x" +  String.format("%2s",Integer.toHexString((data[12]) & 0xFF)).replace(' ','0'));
 
-								message.itemName=item.searchItem(itemID);
+								message=item.searchItem(itemID);
 								System.out.println("The item's name is: "+message.itemName);
 
 
 								//**********read item infomation************//
 								if (!message.itemName.equals("error")){
 									// Thread.sleep(100);
-									data=com.Read(message.itemName,itemID.getBytes());
+									data=com.Read(message.itemName,IDHex);
 									chkErr=chkErrorISO(data);
 									if (chkErr!=0){
 
@@ -551,6 +567,9 @@ public class ServerComm {
 										message.expireDate=byteToString(data[27])+byteToString(data[26])+byteToString(data[25])+byteToString(data[24])
 												+byteToString(data[32])+byteToString(data[31])+byteToString(data[30])+byteToString(data[29]);
 										System.out.println("Expire date of this item is: "+ message.expireDate);
+										if (NewTimes>message.Maxtimes){
+											System.out.println("Warning! Consume too frequently! Max Times of this item is: "+ message.Maxtimes);
+										}
 										//System.out.println(Command.bytesToHexString(data, data.length));
 										Calendar cal = Calendar.getInstance();
 										SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
@@ -582,15 +601,20 @@ public class ServerComm {
 														dataToWrite[3-index]=dataAll[dataAll.length-remainLength+index];
 													}
 												}
-												data=com.Write(message.itemName, dataToWrite,block,itemID.getBytes());
+												data=com.Write(message.itemName, dataToWrite,block,IDHex);
 												remainLength-=4;
 												block=block+1;
 											}
 
 											if(chkErrorISO(data)==0){
-												item.storeData(itemID, message.itemName, message.boughtDate, message.expireDate, getTime , NewTimes);
+												item.updateData(itemID, message.itemName, getTime,NewTimes);
+												if (NewTimes>message.Maxtimes){
+													System.out.println("success! eWarning:Consume too frequently! Max Times of this item is: "+ message.Maxtimes);
+													clientOut.write(("Success!Warning:Consume too much!").getBytes());
+												}else{
 												System.out.println("Record success!");
 												clientOut.write("Record success!".getBytes());
+												}
 											}else{
 												System.out.println("Fail to write new data. Try again");
 												clientOut.write("Fail to write new data. Try again".getBytes());
@@ -604,11 +628,11 @@ public class ServerComm {
 									clientOut.write("Haven't achieved correct itemName. Try again".getBytes());
 									System.out.println("Haven't achieved correct itemName. Try again ");
 								}
-							}else{
-								System.out.println("RFID tag ID haven't read.");
-								clientOut.write("RFID tag ID haven't read.".getBytes());
-								Thread.interrupted();
-							}
+							//}else{
+								//System.out.println("RFID tag ID haven't read.");
+								//clientOut.write("RFID tag ID haven't read.".getBytes());
+								//Thread.interrupted();
+							//}
 
 						}
 						clientOut.flush();

@@ -11,18 +11,18 @@ import java.util.Scanner;
 
 import java.nio.ByteBuffer;
 public class Command {
-	//InputStream in;
-    //OutputStream out;
+	InputStream in;
+    OutputStream out;
     byte[]command;
-	public Command()
+	public Command(InputStream in,OutputStream out)
     {
-       //this.in=in;
-       //this.out=out;
-		super();
+       this.in=in;
+       this.out=out;
+
     }
 
 	//**********************Reader Detail************************//
-	 public byte[] readVersion(InputStream in,OutputStream out){
+	 public byte[] readVersion(){
 	    	command=new byte[]{(byte)0x01, (byte)0x09, (byte)0, (byte)0,(byte) 0,(byte) 0, (byte)0xf0, (byte)0xf8,(byte)0x07};
          //System.out.println(bytesToHexString(command,command.length));
 
@@ -33,7 +33,8 @@ public class Command {
          {
          	  out.write(command);
          	  out.flush();
-              out.close();
+              Thread.sleep(1000);
+         	  //out.close();
               len = in.read(buffer,0,1) ;
               String SOF=(bytesToHexString(buffer,len));
               len = in.read(buffer,1,1) ;
@@ -49,7 +50,7 @@ public class Command {
               //System.out.println(len);
 
          }
-         catch ( IOException e )
+         catch ( Exception e )
          {
              e.printStackTrace();
              System.exit(1);
@@ -59,7 +60,7 @@ public class Command {
 	    }
 
 	 //**********************Tag Detail************************//
-	  public byte[] TagDetail(InputStream in,OutputStream out){
+	  public byte[] TagDetail(){
 		  ByteBuffer command_detail=ByteBuffer.allocate(13);
 		  // 0: SOF
 		  // 1 & 2: length LSB and MSB respectively, filled in later
@@ -96,7 +97,8 @@ public class Command {
       {
       	   out.write(command);
       	   out.flush();
-           out.close();
+      	   Thread.sleep(1000);
+      	   //out.close();
            len = in.read(buffer_tag,0,1) ;
            String SOF=(bytesToHexString(buffer_tag,len));
            while(!SOF.equals("01")){
@@ -115,7 +117,7 @@ public class Command {
            //System.out.println("The data is: "+data);
            //System.out.println(length_data);
       }
-      catch ( IOException e )
+      catch ( Exception e )
       {
           e.printStackTrace();
           System.exit(1);
@@ -143,24 +145,10 @@ public class Command {
 
 
 	//***********************Read Item Detail****************************//
-	  public byte[] Read(String itemName,byte[]itemID,InputStream in,OutputStream out){
+	  public byte[] Read(String itemName,byte[]itemID){
 		  byte[] buffer=new byte[100];
 		  byte[] flushBuffer=new byte[20];
-		  byte[] UID;//=itemID;
-		  switch(itemName){
-		  case "milk":
-			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x3d};
-			  break;
-		  case "egg":
-			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x39};
-			  break;
-		  case "carrot" :
-			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x38};
-			  break;
-		  default:
-			  UID=null;
-			  break;
-		  }
+		  byte[] UID=itemID;
 		  ByteBuffer command_detail=ByteBuffer.allocate(22);
 		  // 0: SOF
 		  // 1 & 2: length LSB and MSB respectively, filled in later
@@ -217,9 +205,13 @@ public class Command {
           	   buffer=new byte[50];
         	   out.write(command);
         	   out.flush();
-               out.close();
+              // out.close();
+        	   Thread.sleep(1000);
+               if(in.available()!=0){
                len = in.read(buffer,0,1) ;
-               String SOF=(bytesToHexString(buffer,len));
+               String SOF="00";
+               SOF=(bytesToHexString(buffer,len));
+
                while(!SOF.equals("01")){
             	   len = in.read(buffer,0,1) ;
                    SOF=(bytesToHexString(buffer,len));
@@ -238,13 +230,11 @@ public class Command {
                }else{
             	   buffer="error".getBytes();
                }
-               if(in.available()!=0){
-            	   in.read(flushBuffer);
-            	   System.out.println("The remain data of read is: "+flushBuffer.toString());
                }
+
                in.close();
           }
-          catch ( IOException e )
+          catch ( Exception e )
           {
               e.printStackTrace();
               System.exit(1);
@@ -255,9 +245,9 @@ public class Command {
 
 
 	//***********************Write Item Detail****************************//
-	  public byte[] Write(String itemName, byte[] dataToWrite,int block, byte[] itemID,InputStream in,OutputStream out){
-		  byte[] UID;//=itemID;
-		  switch(itemName){
+	  public byte[] Write(String itemName, byte[] dataToWrite,int block, byte[] itemID){
+		  byte[] UID=itemID;
+		  /*switch(itemName){
 		  case "milk":
 			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x3d};
 			  break;
@@ -270,7 +260,7 @@ public class Command {
 		  default:
 			  UID=null;
 			  break;
-		  }
+		  }*/
 
 		  ByteBuffer command_detail=ByteBuffer.allocate(25);
 		  // 0: SOF
@@ -336,9 +326,11 @@ public class Command {
             	    buffer_write=new byte[100];
             	    out.write(command);
             	    out.flush();
-                    out.close();
+                   // out.close();
+                    Thread.sleep(1000);
                     len = in.read(buffer_write,0,1);
-                    String SOF=(bytesToHexString(buffer_write,len));
+                    String SOF="00";
+                    SOF=(bytesToHexString(buffer_write,len));
                     while(!SOF.equals("01")){
                   	   len = in.read(buffer_write,0,1) ;
                          SOF=(bytesToHexString(buffer_write,len));
@@ -376,7 +368,7 @@ public class Command {
          		        //String error_meaning = "OK";
          		    }*/
                }
-               catch ( IOException e )
+               catch ( Exception e )
                {
                    e.printStackTrace();
                    System.exit(1);

@@ -1,9 +1,10 @@
 package connection;
 
 public class Message {
-	String itemID,itemName,boughtDate,expireDate,getTime;	
+	String itemID,itemName,boughtDate,expireDate,getTime;
     Integer length;
     Integer times;
+    Integer Maxtimes;
     public Message()
     {
        itemID="null";
@@ -13,6 +14,6 @@ public class Message {
        getTime="null";
        length=0;
        times=0;
-        
+       Maxtimes=0;
     }
 }
