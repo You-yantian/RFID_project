@@ -42,12 +42,6 @@ public class Command {
               String data=bytesToHexString(buffer,len);
               len = in.read(buffer,2,length_data-2) ;
               in.close();
-              //in.reset();
-              //System.out.println("The reader version is: "+Integer.toHexString((buffer[8]) & 0xFF)+"."+Integer.toHexString((buffer[7]) & 0xFF));
-              //System.out.println(bytesToHexString(buffer,length_data));
-              //System.out.println(length_data);
-
-              //System.out.println(len);
 
          }
          catch ( Exception e )
@@ -114,8 +108,6 @@ public class Command {
            }
 
            in.close();
-           //System.out.println("The data is: "+data);
-           //System.out.println(length_data);
       }
       catch ( Exception e )
       {
@@ -197,8 +189,6 @@ public class Command {
           System.out.println("new command string is: "+bytesToHexString(command,command_len));
           int length_data=0;
           int len=-1;
-          //int start=0;
-          //byte[]temp=new byte[10];
           try
           {
           	   buffer=null;
@@ -225,8 +215,6 @@ public class Command {
 
                  System.out.println("The data is: "+data);
 
-               //System.out.println(length_data);
-
                }else{
             	   buffer="error".getBytes();
                }
@@ -247,20 +235,6 @@ public class Command {
 	//***********************Write Item Detail****************************//
 	  public byte[] Write(String itemName, byte[] dataToWrite,int block, byte[] itemID){
 		  byte[] UID=itemID;
-		  /*switch(itemName){
-		  case "milk":
-			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x3d};
-			  break;
-		  case "egg":
-			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x39};
-			  break;
-		  case "carrot" :
-			  UID=new byte[]{(byte)0xe0,(byte)0x07,(byte)0x00,(byte)0x00,(byte)0x1f,(byte)0x90,(byte)0x84,(byte)0x38};
-			  break;
-		  default:
-			  UID=null;
-			  break;
-		  }*/
 
 		  ByteBuffer command_detail=ByteBuffer.allocate(25);
 		  // 0: SOF
@@ -354,19 +328,6 @@ public class Command {
                  	   in.read(flushBuffer);
                  	   System.out.println("The remain data of write is: "+flushBuffer.toString());
                     }
-                    /*if ((buffer.length == 10) & (buffer[5] & 0x10) != 0 ){
-         		       result = buffer[7];
-         		       System.out.println("Error occur. The error code is: "+result);
-         		        //error_meaning = {
-         		          //  "0x1" : "Transponder not found.",
-         		          // "0x2" : "Command not supported.",
-         		          //  "0x4" : "Packet flags invalid for command.",
-         		          //  }.get(hex(rddat[7]), "Unknown error code.")
-         		    }
-         		    else{
-         		        result = 0  ;
-         		        //String error_meaning = "OK";
-         		    }*/
                }
                catch ( Exception e )
                {

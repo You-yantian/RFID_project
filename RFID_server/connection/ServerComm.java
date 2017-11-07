@@ -24,8 +24,8 @@ public class ServerComm {
 	    {
 	        super();
 	    }
-
-	void connect ( String portName ) throws Exception
+  
+	void connect ( String portName ) throws Exception   //serialPort communiation start
 	    {
 	        CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier(portName);
 	        byte []data;
@@ -68,7 +68,7 @@ public class ServerComm {
 	    }
 
 
-/////////////////////////////////
+///////////received commands from client through socket communication and send data back after interacting with Tag///////////////////
 	public static void Function (InputStream in,OutputStream out,ServerSocket serverSocket ){
 		Socket clientSocket=new Socket();
 
@@ -78,10 +78,7 @@ public class ServerComm {
 		BufferedReader commandInput = new BufferedReader(new InputStreamReader(System.in));
 		String c=null;
 		Message message=new Message();
-		//String itemName=null;
 		String itemDetail=null;
-		//String boughtDate=null;
-		//String expireDate=null;
 		System.out.println("Input the command: ");
 
 		while(true){
@@ -113,7 +110,6 @@ public class ServerComm {
 				if ( c !=null )
 				{
 
-					// Command com=new Command(in,out);
 					if (c.equals("readVersion")){
 						Thread readVersion = new Thread(new readVersion(in,out,clientOut));
 						readVersion.start();
@@ -154,7 +150,9 @@ public class ServerComm {
 
 	}
 
-	////MultiThread Task///////
+//////////////MultiThread Task//////////////
+	
+	//************read RFID reader version******************//
 	public static class readVersion implements Runnable
     {
 			private	Command com;
@@ -177,6 +175,7 @@ public class ServerComm {
 	        }
     }
 
+		//************read RFID Tag ID******************//
 		public static class TagDetail implements Runnable
 	     {
 				private Command com;
@@ -227,7 +226,7 @@ public class ServerComm {
                	}
 		        }
 	     }
-
+		//************Initial RFID Tag with new food information******************//
 		public static class write implements Runnable
 	     {
 			private String itemDetail=null;
@@ -259,7 +258,6 @@ public class ServerComm {
 		           	if (chkErr!=0){
 
 		           	    System.out.println("Reader returned error code: " + chkErr);
-		           	   // System.exit(1);
 		               }
 		           	else if(data1.toString().equals("error1")){
 		           		 System.out.println("CheckSum Error");
@@ -270,8 +268,7 @@ public class ServerComm {
 		          		 	Thread.interrupted();
 		           	}
 		           	else{
-		           		//String.format("%8s", Integer.toBinaryString(b2 & 0xFF)).replace(' ', '0');
-
+		           		
 		           		if(data1[7]==0x01){
 		           			for(int i=0;i<8;i++){
 	            				IDHex[i]=data1[20-i];
@@ -282,10 +279,9 @@ public class ServerComm {
 		           					+ String.format("%2s",Integer.toHexString((data1[16]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data1[15]) & 0xFF)).replace(' ','0')
 		           					+ String.format("%2s",Integer.toHexString((data1[14]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data1[13]) & 0xFF)).replace(' ','0');
 		           			System.out.println("ID is :"+ itemID);
-		           			//System.out.println("DSFID: 0x" +  String.format("%2s",Integer.toHexString((data[12]) & 0xFF)).replace(' ','0'));
+		           			
 
-
-		               ///***************************///
+		               ///**********receive new food information from client through socket***********///
 		           	try {
 		           		//Thread.sleep(100);
 		           		System.out.println("The received message is "+c);
@@ -300,8 +296,6 @@ public class ServerComm {
 
 		           		int len_expireDate=Integer.parseInt(c.substring(1+len_Name+1+len_MaxTimes+1+len_boughtDate,1+len_Name+1+len_MaxTimes+1+len_boughtDate+1));
 		           		message.expireDate=c.substring(1+len_Name+1+len_MaxTimes+1+len_boughtDate+1);
-		           		//System.out.println("Please enter the maximum times you want to consume this item with in one week: ");
-		           		//MaxTime=commandInput.readLine();
 			            } catch (Exception e) {
 			                e.printStackTrace();
 			            }
@@ -311,7 +305,7 @@ public class ServerComm {
 		               byte[] dataAll=(itemDetail.length()+itemDetail).getBytes();
 		               int remainLength=dataAll.length;
 		               int index=0;
-
+						///**********Write into Tag Memory.4 bytes per-time***********///
 		               while(remainLength>0 ){
 		               	if(remainLength>=4){
 		               		/*try{
@@ -334,7 +328,7 @@ public class ServerComm {
 		           	    block=block+1;
 		               }
 
-		               //*******Store the initial data into database*******//
+		               ///*******Store the initial data into database*******///
 		               try{
 
 		                if (!data.toString().equals("error")){
@@ -369,6 +363,7 @@ public class ServerComm {
 
 	     }
 
+		//************read food information from Tag memeory******************//
 		public static class read implements Runnable
 	     {
 				private String itemDetail=null;
@@ -385,7 +380,7 @@ public class ServerComm {
 				}
 				public void run ()
 		        {
-	            	///*******get item ID******///
+	            	///*******get Tag ID******///
 	            	boolean success=true;
 					byte []data=com.TagDetail();
 	            	String itemID=null;
@@ -407,28 +402,25 @@ public class ServerComm {
 	           		  	Thread.interrupted();
 	           	    }
 	            	else{
-	            		//String.format("%8s", Integer.toBinaryString(b2 & 0xFF)).replace(' ', '0');
+	            		
 	            		if(data[7]==0x01){
 	            			for(int i=0;i<8;i++){
 	            				IDHex[i]=data[20-i];
 	            			}
 	            			itemID=String.format("%2s",Integer.toHexString((data[20]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[19]) & 0xFF)).replace(' ','0')
 	            					+ String.format("%2s",Integer.toHexString((data[18]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[17]) & 0xFF)).replace(' ','0')
-	            					//+ Integer.toHexString((data[18]) & 0xFF) + Integer.toHexString((data[17]) & 0xFF)
-	            					+ String.format("%2s",Integer.toHexString((data[16]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[15]) & 0xFF)).replace(' ','0')
+	               					+ String.format("%2s",Integer.toHexString((data[16]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[15]) & 0xFF)).replace(' ','0')
 	            					+ String.format("%2s",Integer.toHexString((data[14]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[13]) & 0xFF)).replace(' ','0');
 	            			System.out.println("ID is :"+ itemID);
-	            			//System.out.println("DSFID: 0x" +  String.format("%2s",Integer.toHexString((data[12]) & 0xFF)).replace(' ','0'));
 
-
-	            	///*****get item name*******///
+	            	///*****get food name*******///
 	            	   message=item.searchItem(itemID);
-	            	///*************************///
+	            	///******get food info from Tag******///
 	                	int NoBlock=5;
 	                	int startBlock=1;
 	                	int idx=0;
 
-	                	System.out.println("The name of the item is: "+message.itemName+" Max times is: "+message.Maxtimes);
+	                	System.out.println("The name of the food is: "+message.itemName+" Max times is: "+message.Maxtimes);
 	                	try{
 	                	Thread.sleep(100);
 	                	}catch (Exception e){
@@ -468,6 +460,7 @@ public class ServerComm {
             		}
 
 	            	}
+				///******send food infomation back to client************//
 	            	try{
 	            	if (success==true){
 	            		String Iteminfo=message.itemName.length()+message.itemName;
@@ -489,6 +482,7 @@ public class ServerComm {
 		        }
 	     }
 
+		 //************auto-adding fetching times and rewrite Tag******************//
 		public static class record implements Runnable
 	     {
 			private String itemDetail=null;
@@ -528,7 +522,7 @@ public class ServerComm {
 							Thread.interrupted();
 						}
 						else{
-							//String.format("%8s", Integer.toBinaryString(b2 & 0xFF)).replace(' ', '0');
+							//**********Get Tag ID to identify food************//
 							//if(data[7]==0x01){
 								for(int i=0;i<8;i++){
 		            				IDHex[i]=data[20-i];
@@ -539,7 +533,6 @@ public class ServerComm {
 										+ String.format("%2s",Integer.toHexString((data[16]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[15]) & 0xFF)).replace(' ','0')
 										+ String.format("%2s",Integer.toHexString((data[14]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[13]) & 0xFF)).replace(' ','0');
 								System.out.println("ID is :"+ itemID);
-								//System.out.println("DSFID: 0x" +  String.format("%2s",Integer.toHexString((data[12]) & 0xFF)).replace(' ','0'));
 
 								message=item.searchItem(itemID);
 								System.out.println("The item's name is: "+message.itemName);
@@ -569,8 +562,7 @@ public class ServerComm {
 										System.out.println("Expire date of this item is: "+ message.expireDate);
 										if (NewTimes>message.Maxtimes){
 											System.out.println("Warning! Consume too frequently! Max Times of this item is: "+ message.Maxtimes);
-										}
-										//System.out.println(Command.bytesToHexString(data, data.length));
+										}										
 										Calendar cal = Calendar.getInstance();
 										SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 										String getTime=sdf.format(cal.getTime());
@@ -605,7 +597,7 @@ public class ServerComm {
 												remainLength-=4;
 												block=block+1;
 											}
-
+											///*****************update data in database*****************//
 											if(chkErrorISO(data)==0){
 												item.updateData(itemID, message.itemName, getTime,NewTimes);
 												if (NewTimes>message.Maxtimes){
