@@ -28,7 +28,7 @@ public class ServerConnection {
         }
     }
 
-    String StartServer() throws IOException {
+    String readVersion() throws IOException {
         String info="fail";
     	String toServer="readVersion";
         byte[] fromServer = new byte[20];
@@ -51,8 +51,7 @@ public class ServerConnection {
         int n = in.read(data, 0, 30);
         info="Transponder ID: 0x"
 				+ String.format("%2s",Integer.toHexString((data[20]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[19]) & 0xFF)).replace(' ','0')
-				+ String.format("%2s",Integer.toHexString((data[18]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[17]) & 0xFF)).replace(' ','0')
-				//+ Integer.toHexString((data[18]) & 0xFF) + Integer.toHexString((data[17]) & 0xFF)
+				+ String.format("%2s",Integer.toHexString((data[18]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[17]) & 0xFF)).replace(' ','0')				
 				+ String.format("%2s",Integer.toHexString((data[16]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[15]) & 0xFF)).replace(' ','0')
 				+ String.format("%2s",Integer.toHexString((data[14]) & 0xFF)).replace(' ','0') + String.format("%2s",Integer.toHexString((data[13]) & 0xFF)).replace(' ','0');
 
@@ -110,6 +109,7 @@ public class ServerConnection {
         info=new String(data);
         return info;
     }
+	
     String write(String toServer) throws IOException {
     	String info;
         byte[] data = new byte[30];

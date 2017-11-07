@@ -33,6 +33,8 @@ public class RFIDHandler implements Initializable{
     private Button ReadButton;
     @FXML
     private Button RecordButton;
+	@FXML
+    private Button WriteButton;
     @FXML
     private TextField itemName;
     @FXML
@@ -47,7 +49,7 @@ public class RFIDHandler implements Initializable{
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         // TODO
-       // GuessButton.disableProperty().bind(textToGuess.textProperty().isEqualTo(""));
+        WriteButton.disableProperty().bind(itemName.textProperty().isEqualTo(""));
     }
 
     @FXML
@@ -82,7 +84,7 @@ public class RFIDHandler implements Initializable{
                 server = getValue();
                 try {
                     showResult.clear();
-                    message = server.StartServer();
+                    message = server.readVersion();
                     showResult.appendText(message + "\n");
                     VersionButton.setDisable(false);
                 } catch (IOException e) {
